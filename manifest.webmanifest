@@ -1,0 +1,8 @@
+{
+  "name": "The Night Apothecary", "short_name": "Apothecary",
+  "description": "Diagnose by description. A desk-deduction shop game: 30 nights, 40 ingredients, three endings.",
+  "id": "./", "start_url": "./", "scope": "./", "display": "standalone", "orientation": "portrait",
+  "background_color": "#14110f", "theme_color": "#14110f", "categories": ["games", "puzzle"],
+  "icons": [ { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }, { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" } ],
+  "screenshots": [ { "src": "icons/screenshot-portrait.png", "sizes": "720x1280", "type": "image/png", "form_factor": "narrow" } ]
+}
