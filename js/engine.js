@@ -74,7 +74,7 @@ function fairPrice(ids) { return ids.reduce((a, id) => a + (ING[id] ? ING[id].co
 /* ---------- state ---------- */
 function newState(opts) {
   opts = opts || {};
-  const s = { v: 1, seed: (opts.seed | 0) || ((Date.now() ^ (Math.random() * 1e9)) | 0), night: 1, phase: 'notice', coin: START_COIN, rep: START_REP, flags: {}, stock: {}, queue: [], caseIdx: 0, current: null, chosen: [], result: null, pending: [], news: [], journal: [], seenPages: {}, unlocked: !!opts.unlocked, gated: false, ending: null, endless: false, stats: { cured: 0, harmed: 0, useless: 0, refused: 0, earned: 0, gouged: 0, nights: 0 } };
+  const s = { v: 1, seed: (opts.seed | 0) || ((Date.now() ^ (Math.random() * 1e9)) | 0), night: 1, phase: 'notice', coin: START_COIN, rep: START_REP, flags: {}, stock: {}, queue: [], caseIdx: 0, current: null, chosen: [], result: null, pending: [], news: [], journal: [], seenPages: {}, unlocked: true, gated: false, ending: null, endless: false, stats: { cured: 0, harmed: 0, useless: 0, refused: 0, earned: 0, gouged: 0, nights: 0 } };
   for (const id of unlockedAt(1)) s.stock[id] = 2;
   return s;
 }
@@ -178,7 +178,7 @@ function sanitizeCase(c) {
 }
 function sanitize(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const s = newState({ seed: raw.seed, unlocked: raw.unlocked === true });
+  const s = newState({ seed: raw.seed }); // every state is fully unlocked, whatever an old save says
   s.night = Math.round(num(raw.night, 1, 1, 9999)); s.coin = Math.round(num(raw.coin, 0, 0, 1e9)); s.rep = num(raw.rep, START_REP, 0, 100);
   s.phase = ['notice', 'counter', 'price', 'outcome', 'nightend', 'market', 'ended'].includes(raw.phase) ? raw.phase : 'notice';
   s.flags = {}; if (raw.flags && typeof raw.flags === 'object') for (const k in raw.flags) if (raw.flags[k]) s.flags[String(k).slice(0, 40)] = true;
@@ -193,7 +193,7 @@ function sanitize(raw) {
   s.news = san(raw.news); s.lastNews = san(raw.lastNews);
   s.journal = Array.isArray(raw.journal) ? raw.journal.filter(j => j && typeof j === 'object').slice(-JOURNAL_CAP).map(j => ({ night: Math.round(num(j.night, 1)), name: String(j.name || '').slice(0, 60), verdict: String(j.verdict || '').slice(0, 8), remedy: Array.isArray(j.remedy) ? j.remedy.filter(id => ING[id]) : [], paid: Math.round(num(j.paid, 0, 0, 999)), gen: !!j.gen })) : [];
   s.seenPages = {}; if (raw.seenPages && typeof raw.seenPages === 'object') for (const k in raw.seenPages) if (ING[k]) s.seenPages[k] = 1;
-  s.gated = raw.gated === true && !s.unlocked; s.ending = D.ENDINGS.some(e => e.id === raw.ending) ? raw.ending : null; s.endless = raw.endless === true;
+  s.gated = false; s.ending = D.ENDINGS.some(e => e.id === raw.ending) ? raw.ending : null; s.endless = raw.endless === true;
   if (raw.stats && typeof raw.stats === 'object') for (const k in s.stats) s.stats[k] = Math.round(num(raw.stats[k], 0, 0, 1e9));
   // a state that claims to be mid-night without a customer falls back to the notice
   if ((s.phase === 'counter' || s.phase === 'price' || s.phase === 'outcome') && !s.current) s.phase = 'notice';

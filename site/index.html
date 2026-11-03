@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Night Apothecary</title>
+  <meta name="description" content="Diagnose by description. A deduction shop game: 30 nights, 40 herbs, 3 endings.">
+  <meta name="theme-color" content="#14110f">
+  <link rel="icon" href="img/icon-192.png">
+  <meta property="og:title" content="The Night Apothecary">
+  <meta property="og:description" content="Diagnose by description. A deduction shop game: 30 nights, 40 herbs, 3 endings.">
+  <meta property="og:image" content="img/feature-graphic-1024x500.png">
+  <style>
+    :root { --bg: #14110f; --fg: #f4efe6; --muted: #c9c1b4; --panel: rgba(255,255,255,0.06); }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg);
+      font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+    .hero img { display: block; width: 100%; height: auto; border-radius: 12px; }
+    header { display: flex; gap: 16px; align-items: center; margin: 24px 0 8px; }
+    header img { width: 72px; height: 72px; border-radius: 16px; }
+    h1 { margin: 0; font-size: 1.8rem; line-height: 1.2; }
+    .short { margin: 4px 0 0; color: var(--muted); }
+    .get { display: inline-block; margin: 20px 0 8px; padding: 12px 22px; border-radius: 999px;
+      background: var(--fg); color: var(--bg); font-weight: 600; text-decoration: none; }
+    .get:focus-visible, .get:hover { outline: 3px solid var(--muted); outline-offset: 2px; }
+    .note { margin: 0 0 24px; color: var(--muted); font-size: 0.9rem; }
+    .shots { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px);
+      gap: 12px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
+    figure { margin: 0; scroll-snap-align: start; }
+    figure img { display: block; width: 100%; height: auto; border-radius: 10px; }
+    figcaption { margin-top: 6px; font-size: 0.85rem; color: var(--muted); }
+    .about { margin-top: 28px; padding: 4px 20px; border-radius: 12px; background: var(--panel); }
+    footer { margin-top: 32px; font-size: 0.9rem; color: var(--muted); }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero"><img src="img/feature-graphic-1024x500.png" alt="" width="1024" height="500"></div>
+    <header>
+      <img src="img/icon-192.png" alt="" width="72" height="72">
+      <div>
+        <h1>The Night Apothecary</h1>
+        <p class="short">Diagnose by description. A deduction shop game: 30 nights, 40 herbs, 3 endings.</p>
+      </div>
+    </header>
+    <a class="get" href="https://play.google.com/store/apps/details?id=com.taugustincst.apothecary">Get it on Google Play</a>
+    <p class="note">The Night Apothecary is played in the Android app.</p>
+    <section class="shots" aria-label="Screenshots">
+        <figure><img src="img/screenshot-01-counter.png" alt="Diagnose by description · the encyclopedia open at the counter" loading="lazy" width="540" height="1170"><figcaption>Diagnose by description · the encyclopedia open at the counter</figcaption></figure>
+        <figure><img src="img/screenshot-02-encyclopedia.png" alt="40 ingredients · appearance, habitat, properties, lookalikes" loading="lazy" width="540" height="1170"><figcaption>40 ingredients · appearance, habitat, properties, lookalikes</figcaption></figure>
+        <figure><img src="img/screenshot-03-price.png" alt="Compound, price, or refuse" loading="lazy" width="540" height="1170"><figcaption>Compound, price, or refuse</figcaption></figure>
+        <figure><img src="img/screenshot-04-noticeboard.png" alt="30 nights · one branching story · three endings" loading="lazy" width="540" height="1170"><figcaption>30 nights · one branching story · three endings</figcaption></figure>
+    </section>
+    <section class="about">
+      <p><strong>Diagnose by description.</strong> You inherit a midnight apothecary in a plague-quiet town. Customers describe their symptoms, their dreams and their omens in plain words. Some of what they say matters. Some of it is the magpie on the gate.</p>
+      <p><strong>Read the pages.</strong> Forty ingredients, each with its appearance, habitat, properties and preparation, and the lookalike it is mistaken for. The encyclopedia grows as the story does: the locked cupboard, the physician's shelf, the midwife's pages, the pages your aunt sewed shut.</p>
+      <p><strong>Compound, or refuse.</strong> Mix one to three ingredients in the mortar, set a price, and serve. Or refuse: sometimes that is the right answer. A wrong remedy can be worse than none, and the town will tell you tomorrow night.</p>
+      <p><strong>Live with it.</strong> Thirty authored nights, one branching story, three endings decided by what you did and who trusted you for it. Then the long winter: endless procedural customers, every one of them solvable from the pages alone.</p>
+      <ul><li>Every diagnosis is provable from the encyclopedia with the pages you have at the time. Fairness is checked by a validator before anything ships.</li><li>No ads, no timers, no accounts, no consumables. Fully offline.</li><li>Portrait, one-handed, large-text and high-contrast options, no twitch input.</li><li>All thirty nights, three endings and the long winter, included.</li></ul>
+    </section>
+    <footer>
+      <a href="privacy.html">Privacy policy</a>
+    </footer>
+  </main>
+  <script>
+    // Earlier versions of this site installed the game for offline play.
+    // Registering sw.js again replaces that copy with one that clears it.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        if (regs.length) navigator.serviceWorker.register('sw.js').catch(function () {});
+      }).catch(function () {});
+    }
+  </script>
+</body>
+</html>
