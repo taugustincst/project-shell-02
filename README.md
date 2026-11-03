@@ -2,7 +2,7 @@
 
 **A desk-deduction shop game.** You inherit a midnight apothecary in a plague-quiet town. Customers describe symptoms, dreams and omens in plain words; you identify the right remedy from your encyclopedia, compound it, price it, and live with the consequences across a 30-night story.
 
-Free on Google Play (first 5 nights) with a one-time $3.99 unlock. No ads, no consumables, fully offline.
+A paid download on Google Play with the whole story included. No in-app purchases, no ads, no consumables, fully offline.
 
 Status: **v1.0.0 draft built 2026-11-03**, not yet submitted. Build brief and the living log are in [HANDOFF.md](HANDOFF.md); plan and verification in [tasks/todo.md](tasks/todo.md); lessons in [tasks/lessons.md](tasks/lessons.md). Repo rename at ship time (Tj's call).
 
@@ -25,8 +25,7 @@ Owner: Tj (Taylor Augustin) / AugustInnovations LLC.
 | --- | --- |
 | `js/data.js` | All content: tags, ingredients, clue phrases, authored cases, nights, endings. |
 | `js/engine.js` | Rules and state: `evaluate`, `solve`, generator, night flow, pricing, consequences, save sanitizer. No DOM; runs in Node. |
-| `js/game.js` | UI, save, encyclopedia, test API `window.__apothecary` (`jumpToNight`, `seed`, `forceCustomer`, `unlock`). `?dev=1` makes the unlock free for testing. |
-| `js/billing.js` | Google Play Billing via the Digital Goods API, product `full_unlock`. |
+| `js/game.js` | UI, save, encyclopedia, test API `window.__apothecary` (`jumpToNight`, `seed`, `forceCustomer`). |
 | `tools/validate.js` | The fairness validator. |
 | `tests/engine.test.js`, `tests/smoke.js` | Unit tests and a Playwright smoke test (runs over `file://`). |
 
@@ -40,4 +39,4 @@ Saves: `localStorage` key `apothecary.v1`; every field sanitized and clamped on 
 
 ## Publishing
 
-Ships as a Trusted Web Activity (the Ironhold pattern). Pages deploys from `main`; privacy policy is `privacy.html`; store copy draft is `store/listing.md`.
+A paid app on Google Play with the whole game packed inside it (`android/play`, see `PLAY.md`). Pages deploys only the store page from `main` (`site/index.html`, the privacy policy `privacy.html` and the store graphics), not the playable game. Store copy: `store/listing.md`.

@@ -37,9 +37,6 @@
         <label class="row"><input type="checkbox" id="opt-large"> Large text</label>
         <label class="row"><input type="checkbox" id="opt-contrast"> High contrast</label>
         <label class="row"><input type="checkbox" id="opt-motion"> Reduce motion</label></div>
-      <div class="card" id="unlock-card"><h2>The rest of the story</h2>
-        <p id="unlock-status">Nights one to five are free: the shop, the midwife, the priest, the first fever. One purchase opens nights six to thirty, all three endings, and the long winter of procedural customers after.</p>
-        <div class="row-btns"><button class="btn primary" id="btn-unlock">Unlock the rest of the story</button><button class="btn" id="btn-restore">Restore purchase</button></div></div>
       <div class="card"><h2>Save</h2><p class="muted">Progress is saved on this device automatically. Nothing leaves it.</p>
         <div class="row-btns"><button class="btn" id="btn-export">Copy save code</button><button class="btn" id="btn-import">Paste save code</button><button class="btn danger" id="btn-reset">Start the story again</button></div></div>
       <div class="card about"><h2>About</h2><p>Every customer can be diagnosed from the encyclopedia alone, with the pages you have at the time. If it ever feels unfair, it is a bug, and we want to hear.</p>
@@ -48,16 +45,9 @@
   </main>
 </div>
 <div class="modal" id="modal-page" hidden role="dialog" aria-modal="true"><div class="sheet" id="page-sheet"></div></div>
-<div class="modal" id="modal-gate" hidden role="dialog" aria-modal="true"><div class="sheet">
-  <div class="sheet-date">After night five</div><h2>The shop stays open</h2>
-  <p>Five nights, one key, one teapot. This is where the free part of the story ends: the plague is in Mill Lane, the clerk has the ledgers, and the physician's shelf is for sale.</p>
-  <p class="muted">The rest: nights six to thirty, the forty barrels, the midwife's pages, the sewn pages, three endings, and the long winter after.</p>
-  <div class="row-btns"><button class="btn primary" id="btn-gate-unlock">Unlock the rest of the story</button><button class="btn" id="btn-gate-restore">Restore purchase</button><button class="btn" id="btn-gate-later">Not tonight</button></div>
-  <p class="muted small" id="gate-note"></p></div></div>
 <div id="toast" class="toast" hidden></div>
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>
-<script src="js/billing.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

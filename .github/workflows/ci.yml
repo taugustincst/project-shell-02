@@ -19,7 +19,6 @@ jobs:
       - name: Fairness validator (every case has exactly one best remedy)
         run: node tools/validate.js 40
       - run: node tests/engine.test.js
-      - run: node tests/billing.test.js
       - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: node tests/smoke.js

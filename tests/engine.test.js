@@ -24,10 +24,14 @@ t('a perfect run reaches the lantern ending; a harmful one the dark window', () 
   const bad = E.newState({ seed: 3, unlocked: true }); for (let i = 0; i < 30 && !bad.ending; i++) playNight(bad, (c, r) => { const u = E.unlockedIds(bad); const truth = E.truthOf(c); const harmful = u.find(id => E.evaluate([id], truth) === 'harm'); return harmful ? [harmful] : r.best[0]; });
   assert.strictEqual(bad.ending, 'dark', String(bad.rep));
 });
-t('the free story stops after night five until unlocked', () => {
-  const s = E.newState({ seed: 1 }); for (let i = 0; i < 5; i++) playNight(s);
-  assert.ok(s.gated && s.night === 6 && s.phase === 'notice'); assert.strictEqual(E.beginNight(s), false);
-  E.grantUnlock(s); assert.strictEqual(E.beginNight(s), true);
+t('the story plays on past night five with no gate', () => {
+  const s = E.newState({ seed: 1 }); assert.strictEqual(s.unlocked, true); for (let i = 0; i < 5; i++) playNight(s);
+  assert.ok(!s.gated && s.night === 6 && s.phase === 'notice'); assert.strictEqual(E.beginNight(s), true);
+  for (let i = 0; i < 3; i++) playNight(s); assert.ok(!s.gated && s.night >= 9, 'night ' + s.night);
+});
+t('an old save that was gated and never unlocked loads fully unlocked', () => {
+  const old = E.newState({ seed: 1 }); old.night = 6; old.unlocked = false; old.gated = true;
+  const s = E.sanitize(JSON.parse(JSON.stringify(old))); assert.ok(s.unlocked && !s.gated && s.night === 6); assert.strictEqual(E.beginNight(s), true);
 });
 t('the mayor\'s refusal brings his second request the same night', () => {
   const s = E.newState({ seed: 2, unlocked: true }); s.night = 14; s.flags.ledgers = true; E.beginNight(s); assert.strictEqual(s.current, 'n14_mayor');
