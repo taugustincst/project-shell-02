@@ -1,10 +1,12 @@
 /* The Night Apothecary — UI, save, flow. Numbers and rules live in engine.js; words live in data.js. */
 (function () {
 'use strict';
-const E = window.APO, D = E.D, B = window.KTL_BILLING;
+const E = window.APO, D = E.D, B = window.APO_BILLING;
 const VERSION = '1.0.0', SAVE_KEY = 'apothecary.v1', BACKUP_KEY = 'apothecary.v1.backup';
 const $ = id => document.getElementById(id);
-const DEV = new URLSearchParams(location.search).get('dev') === '1';
+// ?dev=1 makes unlocking free for testing. Only on a local copy: the Play app opens the public site, and
+// the free unlock would otherwise be one link away for anyone and saved on their phone.
+const DEV = new URLSearchParams(location.search).get('dev') === '1' && ['localhost', '127.0.0.1', ''].includes(location.hostname);
 let S = null, meta = null, settings = null;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
