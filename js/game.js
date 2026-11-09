@@ -2,21 +2,25 @@
 (function () {
 'use strict';
 const E = window.APO, D = E.D;
-const VERSION = '1.0.0', SAVE_KEY = 'apothecary.v1', BACKUP_KEY = 'apothecary.v1.backup';
+// The unlock is a Google Play purchase (js/billing.js). Play's answer, cached on the phone, is the only thing
+// that opens nights six to thirty: not a save, not a save code, not a URL.
+const BILL = window.createBilling({ storageKey: 'apothecary.unlock', productId: 'full_unlock' });
+const VERSION = '1.1.0', SAVE_KEY = 'apothecary.v1', BACKUP_KEY = 'apothecary.v1.backup';
 const $ = id => document.getElementById(id);
 let S = null, meta = null, settings = null;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- save ---------- */
-function sanitizeMeta(m) { m = (m && typeof m === 'object') ? m : {}; return { unlocked: true, endings: (m.endings && typeof m.endings === 'object') ? Object.fromEntries(Object.keys(m.endings).filter(k => D.ENDINGS.some(e => e.id === k)).map(k => [k, true])) : {}, runs: Math.max(0, Math.min(9999, Math.round(+m.runs || 0))) }; }
+function sanitizeMeta(m) { m = (m && typeof m === 'object') ? m : {}; return { endings: (m.endings && typeof m.endings === 'object') ? Object.fromEntries(Object.keys(m.endings).filter(k => D.ENDINGS.some(e => e.id === k)).map(k => [k, true])) : {}, runs: Math.max(0, Math.min(9999, Math.round(+m.runs || 0))) }; }
 function sanitizeSettings(x) { x = (x && typeof x === 'object') ? x : {}; return { large: x.large === true, contrast: x.contrast === true, motion: x.motion === true }; }
 function load() {
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { try { localStorage.setItem(BACKUP_KEY, localStorage.getItem(SAVE_KEY) || ''); } catch (e2) { } }
   meta = sanitizeMeta(raw && raw.meta); settings = sanitizeSettings(raw && raw.settings);
   S = raw && raw.run ? E.sanitize(raw.run) : null; if (!S) S = E.newState();
-  E.grantUnlock(S); // the whole story is included: old saves that were never unlocked open fully
+  applyOwned();
 }
+function applyOwned() { if (BILL.state.owned) E.grantUnlock(S); else { S.unlocked = false; E.checkGate(S); } }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, run: S, meta, settings, savedAt: Date.now() })); } catch (e) { } }
 function applySettings() { for (const k of ['large', 'contrast', 'motion']) { document.documentElement.classList.toggle(k, settings[k]); $('opt-' + k).checked = settings[k]; } }
 
@@ -37,21 +41,24 @@ function render() {
   const ph = S.phase;
   if (ph === 'notice') renderNotice(box); else if (ph === 'counter') renderCounter(box); else if (ph === 'price') renderPrice(box); else if (ph === 'outcome') renderOutcome(box); else if (ph === 'nightend') renderNightEnd(box); else if (ph === 'market') renderMarket(box); else if (ph === 'ended') renderEnded(box);
   const unseen = E.unlockedIds(S).filter(id => !S.seenPages[id]).length; $('book-badge').textContent = unseen; $('book-badge').hidden = !unseen;
+  renderUnlockCard();
 }
 function el(html) { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
 function renderNotice(box) {
   const n = E.nightDef(S);
-  if (S.lastNews && S.lastNews.length) box.appendChild(el(`<div class="card"><h2>Word from the town</h2><ul class="news">${S.lastNews.map(x => `<li><b>${esc(x.name)}.</b> ${esc(x.text)} <span class="${x.rep > 0 ? 'up' : x.rep < 0 ? 'down' : ''}">${x.rep > 0 ? '+' : ''}${x.rep ? x.rep + ' repute' : ''}</span></li>`).join('')}</ul></div>`));
+  if (S.lastNews && S.lastNews.length) box.appendChild(el(`<div class="card"><h2>Word from the town</h2><ul class="news">${S.lastNews.map(x => `<li>${String(x.text).startsWith(x.name) ? `<b>${esc(x.name)}</b>${esc(String(x.text).slice(String(x.name).length))}` : `<b>${esc(x.name)}.</b> ${esc(x.text)}`} <span class="${x.rep > 0 ? 'up' : x.rep < 0 ? 'down' : ''}">${x.rep > 0 ? '+' : ''}${x.rep ? x.rep + ' repute' : ''}</span></li>`).join('')}</ul></div>`));
   box.appendChild(el(`<div class="card"><h2>The noticeboard</h2><div class="notice">${esc(n ? n.notice : 'THE QUARANTINE IS LIFTED. The shop remains open at night, because the town has learned to come at night. — Hesper will attend births. — Nobody has seen a red coat.')}</div></div>`));
-  if (S.gated) E.grantUnlock(S);
+  if (S.gated) { box.appendChild(el(`<div class="card"><h2>The shop stays open</h2><p>Nights one to five were free. ${esc(STORY_PITCH)}</p><p class="muted small" id="b-note" role="status">${esc(unlockNote())}</p><div class="row-btns">${unlockButtons('b')}</div></div>`)); wireUnlock('b'); return; }
   const b = el(`<button class="btn primary wide"><span class="lamp"></span>Light the lamp and open the shop</button>`); b.onclick = () => { E.beginNight(S); save(); render(); }; box.appendChild(b);
   const m = el(`<button class="btn wide">Buy stock first</button>`); m.onclick = () => { S.phase = 'market'; render(); }; box.appendChild(m);
 }
 function renderCounter(box) {
   const c = E.currentCase(S); if (!c) { S.phase = 'nightend'; render(); return; }
   box.appendChild(el(`<div class="card customer"><div class="sheet-date">Customer ${S.caseIdx + 1} of ${S.queue.length}</div><h2>${esc(c.name)}</h2><p class="intro">${esc(c.intro)}</p><ul class="clues">${c.clues.map(cl => `<li>“${esc(cl.t)}”</li>`).join('')}</ul></div>`));
-  const stock = E.unlockedIds(S).filter(id => (S.stock[id] | 0) > 0 || S.chosen.includes(id));
-  const card = el(`<div class="card"><h2>The mortar</h2><div class="mortar">${S.chosen.length ? S.chosen.map(id => `<span class="pill">${esc(E.ING[id].name)}</span>`).join('') : '<span class="muted">Nothing yet. Tap jars to add up to three.</span>'}</div><div class="jars">${stock.map(id => `<button class="jar${S.chosen.includes(id) ? ' sel' : ''}" data-jar="${id}" ${(S.stock[id] | 0) <= 0 && !S.chosen.includes(id) ? 'disabled' : ''}><b>${esc(E.ING[id].name)}</b><span>${S.stock[id] | 0} in stock</span></button>`).join('')}</div><div class="row-btns"><button class="btn" id="b-book">Open the encyclopedia</button><button class="btn primary" id="b-give" ${S.chosen.length ? '' : 'disabled'}>Give the remedy</button><button class="btn danger" id="b-refuse">Refuse to serve</button></div></div>`);
+  // every page you have is on the shelf; an empty jar shows as out of stock rather than vanishing, so a cure you
+  // have worked out but cannot give tonight is plain to see (refuse, and stock it at the morning market)
+  const stock = E.unlockedIds(S).slice().sort((x, y) => ((S.stock[y] | 0) > 0 || S.chosen.includes(y)) - ((S.stock[x] | 0) > 0 || S.chosen.includes(x)));
+  const card = el(`<div class="card"><h2>The mortar</h2><div class="mortar">${S.chosen.length ? S.chosen.map(id => `<span class="pill">${esc(E.ING[id].name)}</span>`).join('') : '<span class="muted">Nothing yet. Tap jars to add up to three.</span>'}</div><div class="jars">${stock.map(id => `<button class="jar${S.chosen.includes(id) ? ' sel' : ''}" data-jar="${id}" ${(S.stock[id] | 0) <= 0 && !S.chosen.includes(id) ? 'disabled' : ''}><b>${esc(E.ING[id].name)}</b><span>${(S.stock[id] | 0) > 0 ? (S.stock[id] | 0) + ' in stock' : S.chosen.includes(id) ? 'last jar' : 'out of stock'}</span></button>`).join('')}</div>${stock.some(id => (S.stock[id] | 0) <= 0 && !S.chosen.includes(id)) ? '<p class="muted small">Greyed jars are out of stock tonight. The morning market sells them.</p>' : ''}<div class="row-btns"><button class="btn" id="b-book">Open the encyclopedia</button><button class="btn primary" id="b-give" ${S.chosen.length ? '' : 'disabled'}>Give the remedy</button><button class="btn danger" id="b-refuse">Refuse to serve</button></div></div>`);
   box.appendChild(card);
   card.querySelectorAll('[data-jar]').forEach(b => b.onclick = () => { E.toggleIngredient(S, b.dataset.jar); render(); });
   $('b-book').onclick = () => setTab('book');
@@ -75,19 +82,19 @@ function renderOutcome(box) {
 function renderNightEnd(box) {
   const tonight = S.journal.filter(j => j.night === S.night);
   box.appendChild(el(`<div class="card"><h2>The lamp burns low</h2><p class="muted">${tonight.length} served tonight. ${S.news.reduce((a, n) => a + (n.coin || 0), 0) ? '' : ''}The consequences land tomorrow, as they do.</p><button class="btn primary wide" id="b-close">Put out the lamp</button></div>`));
-  $('b-close').onclick = () => { E.endNight(S); if (S.ending && !S.endless) { meta.endings[S.ending] = true; meta.runs++; } save(); render(); };
+  $('b-close').onclick = () => { E.endNight(S); if (S.ending && !S.endless) { meta.endings[S.ending] = true; meta.runs++; } save(); render(); maybeGate(); };
 }
 function renderMarket(box) {
   const ids = E.unlockedIds(S);
   box.appendChild(el(`<div class="card"><h2>The morning market</h2><p class="muted">${S.coin} coin in the till. Buy for tonight; what is not in a jar cannot go in the mortar.</p><div>${ids.map(id => { const i = E.ING[id]; return `<div class="market"><b>${esc(i.name)}</b><button class="btn" data-buy="${id}" ${S.coin < i.cost ? 'disabled' : ''}>+1 · ${i.cost} coin</button><span>${S.stock[id] | 0} in stock · ${esc(eases(i))}</span></div>`; }).join('')}</div><button class="btn primary wide" id="b-notice">Read the noticeboard</button></div>`));
   box.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => { if (E.buy(S, b.dataset.buy, 1)) { save(); render(); } });
-  $('b-notice').onclick = () => { E.openNotice(S); save(); render(); };
+  $('b-notice').onclick = () => { E.openNotice(S); save(); render(); maybeGate(); };
 }
 function renderEnded(box) {
   const e = D.ENDINGS.find(x => x.id === S.ending); const st = S.stats;
-  box.appendChild(el(`<div class="card"><div class="sheet-date">After thirty nights</div><h2>${esc(e.title)}</h2><p>${esc(e.text)}</p><div class="stats"><div class="stat"><b>${st.cured}</b><span>cured</span></div><div class="stat"><b>${st.harmed}</b><span>harmed</span></div><div class="stat"><b>${st.useless}</b><span>sent home no better</span></div><div class="stat"><b>${st.refused}</b><span>refused</span></div><div class="stat"><b>${st.earned}</b><span>coin taken</span></div><div class="stat"><b>${Math.round(S.rep)}</b><span>repute</span></div></div><div class="row-btns"><button class="btn primary" id="b-endless">Keep the shop open: the long winter</button><button class="btn" id="b-again">Begin the story again</button></div><p class="muted small">Endings found: ${Object.keys(meta.endings).length} of ${D.ENDINGS.length}.</p></div>`));
+  box.appendChild(el(`<div class="card"><div class="sheet-date">After thirty nights</div><h2>${esc(e.title)}</h2><p>${esc(e.text)}</p><div class="stats"><div class="stat"><b>${st.cured}</b><span>cured</span></div><div class="stat"><b>${st.harmed}</b><span>harmed</span></div><div class="stat"><b>${st.useless}</b><span>sent home no better</span></div><div class="stat"><b>${st.refused}</b><span>refused</span></div><div class="stat"><b>${st.earned}</b><span>coin taken</span></div><div class="stat"><b>${Math.round(S.rep)}</b><span>repute</span></div></div><div class="row-btns"><button class="btn primary" id="b-endless" ${S.unlocked ? '' : 'disabled'}>Keep the shop open: the long winter</button><button class="btn" id="b-again">Begin the story again</button></div><p class="muted small">Endings found: ${Object.keys(meta.endings).length} of ${D.ENDINGS.length}.</p></div>`));
   $('b-endless').onclick = () => { E.beginEndless(S); save(); render(); };
-  $('b-again').onclick = () => { if (confirm('Begin the thirty nights again from the key in the teapot?')) { S = E.newState(); save(); render(); } };
+  $('b-again').onclick = () => { if (confirm('Begin the thirty nights again from the key in the teapot?')) { S = E.newState(); applyOwned(); save(); render(); } };
 }
 
 /* ---------- encyclopedia ---------- */
@@ -113,7 +120,36 @@ function openPage(id) {
 }
 function renderJournal() {
   const ol = $('journal'); ol.innerHTML = S.journal.length ? '' : '<li class="muted">Nobody yet. The lamp is lit; they will come.</li>';
-  for (const j of S.journal.slice().reverse()) { const li = el(`<li class="${j.verdict}"><div class="jd">Night ${j.night}${j.gen ? '' : ' · story'}</div><b>${esc(j.name)}</b> — ${j.verdict === 'refuse' ? 'refused' : esc(j.remedy.map(id => E.ING[id].name).join(' + '))}${j.paid ? ` · ${j.paid} coin` : ''}</li>`); ol.appendChild(li); }
+  // what a remedy did is the town's to tell: an entry shows its verdict only once that night's news has landed
+  const landed = j => j.night < S.night || S.phase === 'ended';
+  const said = { cure: 'cured', harm: 'harmed', useless: 'no better', refuse: '' };
+  for (const j of S.journal.slice().reverse()) { const k = landed(j) ? j.verdict : 'waiting'; const li = el(`<li class="${k}"><div class="jd">Night ${j.night}${j.gen ? '' : ' · story'}</div><b>${esc(j.name)}</b> — ${j.verdict === 'refuse' ? 'refused' : esc(j.remedy.map(id => E.ING[id].name).join(' + '))}${j.paid ? ` · ${j.paid} coin` : ''}${k === 'waiting' && j.verdict !== 'refuse' ? ' <span class="muted small">· word tomorrow</span>' : said[k] ? ` <span class="small">· ${said[k]}</span>` : ''}</li>`); ol.appendChild(li); }
+}
+
+/* ---------- gate & billing ---------- */
+let gateShown = false;
+const STORY_PITCH = 'One purchase opens nights six to thirty, the forty barrels, the midwife\'s pages, all three endings, and the long winter of customers after.';
+function unlockNote() {
+  const b = BILL.state;
+  if (b.owned) return 'The whole story is open. Thank you.';
+  if (!b.available) return 'Unlocking is done through Google Play, in the app from Google Play.';
+  if (b.pending) return 'Your purchase is waiting on Google Play. The story opens when it goes through.';
+  if (b.error) return b.error;
+  if (b.busy) return 'Asking Google Play…';
+  return b.price ? 'One purchase, ' + b.price + '. Nothing else to buy, no ads.' : 'One purchase. Nothing else to buy, no ads.';
+}
+function unlockButtons(prefix) { const b = BILL.state, off = !b.available || b.busy || b.pending; return `<button class="btn primary" id="${prefix}-unlock" ${off ? 'disabled' : ''}>Unlock the rest of the story${b.price ? ' · ' + esc(b.price) : ''}</button><button class="btn" id="${prefix}-restore" ${!b.available || b.busy ? 'disabled' : ''}>Restore purchase</button>`; }
+function wireUnlock(prefix) { const u = $(prefix + '-unlock'), r = $(prefix + '-restore'); if (u) u.onclick = () => { BILL.buy(); }; if (r) r.onclick = () => { BILL.restore(); }; }
+function renderUnlockCard() {
+  const c = $('unlock-card'); c.hidden = S.unlocked; if (S.unlocked) return;
+  $('unlock-note').textContent = unlockNote(); $('unlock-btns').innerHTML = unlockButtons('btn'); wireUnlock('btn');
+}
+function renderGate() { if ($('modal-gate').hidden) return; $('gate-note').textContent = unlockNote(); $('gate-btns').innerHTML = unlockButtons('btn-gate') + '<button class="btn" id="btn-gate-later">Not tonight</button>'; wireUnlock('btn-gate'); $('btn-gate-later').onclick = () => { $('modal-gate').hidden = true; }; }
+function maybeGate() { if (!S.gated || S.unlocked || gateShown) return; gateShown = true; $('modal-gate').hidden = false; renderGate(); }
+function onBilling() {
+  const was = S.unlocked; applyOwned();
+  if (S.unlocked && !was) { save(); $('modal-gate').hidden = true; toast('The rest of the story is yours.'); }
+  render(); renderGate();
 }
 
 /* ---------- wiring ---------- */
@@ -123,18 +159,19 @@ function init() {
   $('book-q').addEventListener('input', e => { bookFilter.q = e.target.value; renderBook(); });
   for (const k of ['large', 'contrast', 'motion']) $('opt-' + k).addEventListener('change', e => { settings[k] = e.target.checked; applySettings(); save(); });
   $('btn-export').onclick = async () => { const code = btoa(unescape(encodeURIComponent(JSON.stringify({ run: S, meta })))); try { await navigator.clipboard.writeText(code); toast('Save code copied.'); } catch (e) { prompt('Your save code:', code); } };
-  $('btn-import').onclick = () => { const code = prompt('Paste a save code:'); if (!code) return; try { const o = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); const run = E.sanitize(o.run); if (!run) throw 0; S = run; meta = sanitizeMeta(o.meta); E.grantUnlock(S); save(); render(); toast('Save loaded.'); } catch (e) { toast('That code could not be read.'); } };
-  $('btn-reset').onclick = () => { if (confirm('Start the thirty nights again? The endings you have found stay.')) { S = E.newState(); save(); render(); setTab('shop'); } };
+  $('btn-import').onclick = () => { const code = prompt('Paste a save code:'); if (!code) return; try { const o = JSON.parse(decodeURIComponent(escape(atob(code.trim())))); const run = E.sanitize(o.run); if (!run) throw 0; S = run; meta = sanitizeMeta(o.meta); applyOwned(); gateShown = false; save(); render(); toast('Save loaded.'); } catch (e) { toast('That code could not be read.'); } };
+  $('btn-reset').onclick = () => { if (confirm('Start the thirty nights again? Your purchase and the endings you have found stay.')) { S = E.newState(); applyOwned(); gateShown = false; save(); render(); setTab('shop'); } };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); }); window.addEventListener('pagehide', save);
-  $('app').hidden = false; render();
+  BILL.onChange(onBilling); BILL.start();
+  $('app').hidden = false; render(); maybeGate();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => { });
 }
 window.__apothecary = {
   get state() { return S; }, E, D, VERSION, save, render, setTab,
-  jumpToNight(n) { S.night = Math.max(1, n | 0); S.phase = 'notice'; S.gated = false; S.ending = null; S.queue = []; S.current = null; S.chosen = []; S.result = null; for (const i of D.INGREDIENTS) if (i.unlock <= S.night) S.stock[i.id] = Math.max(2, S.stock[i.id] | 0); render(); },
+  jumpToNight(n) { S.night = Math.max(1, n | 0); S.phase = 'notice'; S.ending = null; S.queue = []; S.current = null; S.chosen = []; S.result = null; for (const i of D.INGREDIENTS) if (i.unlock <= S.night) S.stock[i.id] = Math.max(2, S.stock[i.id] | 0); applyOwned(); render(); },
   seed(o) { if (o.rep != null) S.rep = +o.rep; if (o.coin != null) S.coin = +o.coin; if (o.flags) for (const f of o.flags) S.flags[f] = true; render(); },
   forceCustomer(id) { if (!E.CASE[id]) return false; if (S.phase === 'notice') E.beginNight(S); S.queue.splice(S.caseIdx, 0, id); S.current = id; S.phase = 'counter'; S.chosen = []; S.result = null; render(); return true; },
-  reset() { localStorage.removeItem(SAVE_KEY); location.reload(); }
+  billing: BILL, reset() { localStorage.removeItem(SAVE_KEY); location.reload(); }
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

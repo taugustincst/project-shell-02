@@ -23,6 +23,31 @@ for (let n = 1; n <= D.STORY_NIGHTS; n++) {
   for (let i = 0; i < perNight; i++) { const c = E.generateCase(s, n); if (!c) { none++; continue; } gen++; const r = E.solve(E.truthOf(c), E.unlockedAt(n)); if (r.unique) ok++; else bad++; }
   say(bad === 0 && none === 0, `night ${n}: ${ok} unique, ${bad} ambiguous, ${none} could not be generated`);
 }
+console.log('== Stock (a careful shopkeeper)');
+/* The encyclopedia proves a cure exists; the jars decide whether it can be given tonight. Play the story with a
+   shopkeeper who serves every customer the proven cure and, each morning, buys back up to two of every jar the
+   till can pay for. A story customer whose cure is not on the shelf for that shopkeeper is unfair in practice
+   (FAIL). One whose cure is down to its last jar is listed as LOW, so the writing can check the noticeboard
+   hints at it. */
+const stockRuns = [11, 23, 37, 41, 59];
+const outOf = {}, low = {};
+for (const seed of stockRuns) {
+  const st = E.newState({ seed, unlocked: true });
+  for (let night = 1; night <= D.STORY_NIGHTS && !st.ending; night++) {
+    E.beginNight(st); let guard = 0;
+    while (st.phase === 'counter' && guard++ < 30) {
+      const c = E.currentCase(st), truth = E.truthOf(c), r = E.solve(truth, E.unlockedIds(st)), set = c.refuse ? null : r.best[0];
+      if (set && !c.gen) { const short = set.filter(id => (st.stock[id] | 0) < 1); const one = set.filter(id => (st.stock[id] | 0) === 1); if (short.length) (outOf[c.id] = outOf[c.id] || new Set()).add(seed + ':' + short.join('+')); else if (one.length) (low[c.id] = low[c.id] || new Set()).add(one.join('+')); }
+      if (!set || set.some(id => (st.stock[id] | 0) < 1)) E.giveRemedy(st, true); else { st.chosen = set.slice(); E.giveRemedy(st, false); E.setPrice(st, 'fair'); }
+      E.immediateFollow(st); E.nextCustomer(st);
+    }
+    E.endNight(st);
+    if (st.phase === 'market') { for (const id of E.unlockedIds(st)) while ((st.stock[id] | 0) < 2 && E.buy(st, id, 1)); E.openNotice(st); }
+  }
+}
+for (const id in outOf) say(false, `${id}: the cure was not on the shelf (seed:jar ${[...outOf[id]].join(', ')})`);
+for (const id in low) console.log(`LOW  ${id}: last jar of ${[...low[id]].join(' / ')}`);
+say(true, `${stockRuns.length} stories played with a careful shopkeeper: ${Object.keys(outOf).length} story customers without their cure on the shelf, ${Object.keys(low).length} on a last jar`);
 console.log('== Encyclopedia coverage');
 for (const a in D.AILMENTS) { const treaters = D.INGREDIENTS.filter(i => i.treats.includes(a)); say(treaters.length >= 1, `${a}: ${treaters.map(i => i.name + (i.harms.length ? ' (not for ' + i.harms.join(', ') + ')' : '')).join('; ')}`); }
 console.log(`\n${authored} authored, ${gen} generated, ${fails} failures`);

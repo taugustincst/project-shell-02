@@ -1,11 +1,12 @@
 # The Night Apothecary on Google Play
 
-The Night Apothecary is sold on Google Play as a paid app, $3.99, with no in-app purchases. Nothing in the game is free to play: the whole game is inside the app, and the website is only its store page.
+The Night Apothecary is free to install on Google Play. Nights one to five, the opening of the story, are free to play; nights six to thirty, the three endings and the long winter after them are one in-app purchase, the product `full_unlock` at $3.99. There is nothing else to buy and no ads. The whole game is inside the app, and the website is only its store page.
 
-- **The app** is `android/play`: a full-screen WebView that opens the game from files packed inside the APK (`https://appassets.androidplatform.net/www/index.html`, served by AndroidX WebViewAssetLoader). It asks for no permissions, not even internet, and plays fully offline. The build copies the game's files (`index.html`, the styles, `js/`, `icons/` and the rest) into the app every time, so a game change ships with the next version.
+- **The app** is `android/play`: a full-screen WebView that opens the game from files packed inside the APK (`https://appassets.androidplatform.net/www/index.html`, served by AndroidX WebViewAssetLoader). It asks for no permission of its own, not even internet, and plays fully offline. The Play Billing library adds Play's billing permission, which only lets the app talk to the Play Store app on the phone. The build copies the game's files (`index.html`, the styles, `js/`, `icons/` and the rest) into the app every time, so a game change ships with the next version.
 - **Package**: `com.taugustincst.apothecary`
-- **Version**: 1.0.0 (versionCode 10000). The release workflow takes the version and works out the code (1.0.1 becomes 10001).
-- **Checks on every change** (`.github/workflows/android.yml`): builds the release APK and bundle, `tools/check-apk.js` confirms every class the manifest names and every file the game's page loads is in the app, and `tools/launch-test.sh` opens it on an Android 14 emulator and fails unless the game's page loads with no script errors.
+- **The unlock** is `android/play/.../PlayBilling.java` (Google Play Billing 8) and `js/billing.js`. The page asks Play for the price and whether `full_unlock` is owned, opens Play's purchase sheet, and acknowledges each purchase on the phone (Play refunds one that is not acknowledged within three days). Ownership is remembered on the phone so the game opens unlocked offline. There is no server. Outside the Play app (the website, a browser) the unlock is shown as unavailable.
+- **Version**: 1.1.0 (versionCode 10100). The release workflow takes the version and works out the code (1.0.1 becomes 10001).
+- **Checks on every change** (`.github/workflows/android.yml`): builds the release APK and bundle, `tools/check-apk.js` confirms every class the manifest names and every file the game's page loads is in the app, `tools/launch-test.sh` opens it on Android 9 and Android 14 emulators and fails unless the game's page loads with no script errors, and `tools/tap-through.js` plays a customer with real taps on a debug build (the lamp, the encyclopedia and a page's "Put in the mortar", the jars, the remedy and a price), then the lamp going out, the morning market and the noticeboard, the tabs and a setting, the gate letter after night five with the unlock, Back and a relaunch.
 - **Signing**: the release workflow signs with the upload key from the repository's secrets; without them it builds and checks but publishes nothing. Locally, `android/keystore.properties` (never committed) does the same.
 - **The website** (`.github/workflows/pages.yml`) publishes only the store page (`site/index.html`, built from `store/listing.md`), the privacy policy and the store graphics. It no longer publishes the game. Its `sw.js` clears the copy of the game that earlier versions of the site installed for offline play.
 
@@ -13,20 +14,15 @@ The Night Apothecary is sold on Google Play as a paid app, $3.99, with no in-app
 
 These need your accounts, so they are yours.
 
-1. **Create the app in the Play Console** with the package name `com.taugustincst.apothecary` (Play never lets it change once the first bundle is uploaded). Set it up as a **paid** app at $3.99. Play does not let a free app become paid later, so choose Paid before the first release. No in-app products.
-2. **Make an upload key, once, and keep it somewhere safe** (a password manager). On your own computer:
-
-   ```
-   keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
-   base64 -w0 upload.jks
-   ```
-
-   In this repository's Settings > Secrets and variables > Actions, add `ANDROID_UPLOAD_KEYSTORE` (the base64 text), `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS` (`upload`) and `ANDROID_UPLOAD_KEY_PASSWORD`. Never commit the keystore or put its passwords in a file here.
-3. **Build the bundle**: Actions > Release (Play bundle) > Run workflow, version `1.0.0`. It builds, checks that the game loads, and attaches `apothecary-1.0.0-play.aab` to a GitHub release named `play-v1.0.0`.
-4. **Upload it to Internal testing** and accept Play App Signing. Install it from the testing link on a phone and play a little.
-5. **App content**: privacy policy `https://taugustincst.github.io/project-shell-02/privacy.html`; ads: none; data safety: no data collected or shared; content rating and target audience as written in `store/listing.md`.
-6. **Store listing**: title, short and full description from `store/listing.md`; icon `icons/icon-512.png`; feature graphic `store/feature-graphic-1024x500.png`; phone screenshots `store/screenshot-*.png` (1080 wide, in the listing's caption order).
-7. **Release.** A personal developer account made after November 2023 needs a closed test with at least 12 testers for 14 days before production. Then send the release for review. Fixes and playtests listed in `HANDOFF.md` come first.
-8. **The website changes the moment this is merged.** Merging turns the site into the store page, so the game stops being free to play there straight away. Its "Get it on Google Play" button links to `https://play.google.com/store/apps/details?id=com.taugustincst.apothecary`, which only works once the app is live.
+1. **Create the app in the Play Console** with the package name `com.taugustincst.apothecary` (Play never lets it change once the first bundle is uploaded). Set it up as a **free** app (the earlier plan here was a $3.99 paid download; Taylor's "Free with paid unlock" decision replaces it, and Play never lets a paid app become free or the reverse once it is published, so choose Free). Play needs a payments profile on the developer account before it lets you add an in-app product.
+2. **Give this repository the AugustInnovations upload key**, the same one your other games use. In this repository's Settings > Secrets and variables > Actions, add `ANDROID_UPLOAD_KEYSTORE` (the keystore as base64 text, `base64 -w0 upload.jks`), `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS` and `ANDROID_UPLOAD_KEY_PASSWORD`. Never commit the keystore or put its passwords in a file here. Without these four the release workflow builds and checks the bundle but signs nothing.
+3. **Build the bundle**: Actions > Release (Play bundle) > Run workflow, version `1.1.0`. It builds, checks that the game loads, and attaches `apothecary-1.1.0-play.aab` to a GitHub release named `play-v1.1.0`.
+4. **Upload it to Internal testing** and accept Play App Signing. Play only lets you create in-app products once a bundle that uses Play Billing has been uploaded.
+5. **Create the in-app product**: Monetize > Products > In-app products > Create product. Product ID `full_unlock` (exactly this; the app asks for it by name and the ID can never be reused), name "The rest of the story", description "Nights six to thirty, all three endings and the long winter after them. One purchase, nothing else to buy.", price $3.99. Activate it.
+6. **Test the purchase**: add your Google account under Settings > License testing, install from the internal testing link, play past night five (or tap Unlock the rest of the story on the More tab), and buy. A license tester is not charged. Then uninstall, reinstall and tap Restore purchase on the More tab.
+7. **App content**: privacy policy `https://taugustincst.github.io/project-shell-02/privacy.html`; ads: none; in-app purchases: yes; data safety: no data collected or shared (the purchase is held by Google Play; check the form's in-app purchase questions as you go); content rating and target audience as written in `store/listing.md`.
+8. **Store listing**: title, short and full description from `store/listing.md`; icon `icons/icon-512.png`; feature graphic `store/feature-graphic-1024x500.png`; phone screenshots `store/screenshot-*.png` (1080 wide, in the listing's caption order).
+9. **Release.** A personal developer account made after November 2023 needs a closed test with at least 12 testers for 14 days before production. Then send the release for review. Anything still open in `HANDOFF.md` comes first.
+10. **The website changes the moment this is merged.** Merging turns the site into the store page, so the game stops being playable there straight away. Its "Get it on Google Play" button links to `https://play.google.com/store/apps/details?id=com.taugustincst.apothecary`, which only works once the app is live.
 
 No digital asset links are needed: the app no longer opens the website.

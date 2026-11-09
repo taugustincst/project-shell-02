@@ -24,14 +24,18 @@ t('a perfect run reaches the lantern ending; a harmful one the dark window', () 
   const bad = E.newState({ seed: 3, unlocked: true }); for (let i = 0; i < 30 && !bad.ending; i++) playNight(bad, (c, r) => { const u = E.unlockedIds(bad); const truth = E.truthOf(c); const harmful = u.find(id => E.evaluate([id], truth) === 'harm'); return harmful ? [harmful] : r.best[0]; });
   assert.strictEqual(bad.ending, 'dark', String(bad.rep));
 });
-t('the story plays on past night five with no gate', () => {
-  const s = E.newState({ seed: 1 }); assert.strictEqual(s.unlocked, true); for (let i = 0; i < 5; i++) playNight(s);
-  assert.ok(!s.gated && s.night === 6 && s.phase === 'notice'); assert.strictEqual(E.beginNight(s), true);
-  for (let i = 0; i < 3; i++) playNight(s); assert.ok(!s.gated && s.night >= 9, 'night ' + s.night);
+t('nights one to five are free, then the shop waits for the unlock', () => {
+  const s = E.newState({ seed: 1 }); assert.strictEqual(s.unlocked, false); for (let i = 0; i < 5; i++) playNight(s);
+  assert.ok(s.gated && s.night === 6 && s.phase === 'notice'); assert.strictEqual(E.beginNight(s), false);
+  E.grantUnlock(s); assert.ok(!s.gated); assert.strictEqual(E.beginNight(s), true);
 });
-t('an old save that was gated and never unlocked loads fully unlocked', () => {
-  const old = E.newState({ seed: 1 }); old.night = 6; old.unlocked = false; old.gated = true;
-  const s = E.sanitize(JSON.parse(JSON.stringify(old))); assert.ok(s.unlocked && !s.gated && s.night === 6); assert.strictEqual(E.beginNight(s), true);
+t('a save never carries the unlock, and the gate closes again past night five', () => {
+  const paid = E.newState({ seed: 1, unlocked: true }); for (let i = 0; i < 7; i++) playNight(paid); E.beginNight(paid);
+  const s = E.sanitize(JSON.parse(JSON.stringify(paid))); assert.ok(!s.unlocked && s.gated && s.night === 8 && s.phase === 'notice' && s.current === null);
+  assert.strictEqual(E.beginNight(s), false);
+  const early = E.newState({ seed: 1 }); early.night = 4; early.unlocked = true; const e = E.sanitize(JSON.parse(JSON.stringify(early))); assert.ok(!e.unlocked && !e.gated);
+  const ended = E.newState({ seed: 8, unlocked: true }); for (let i = 0; i < 30 && !ended.ending; i++) playNight(ended); assert.ok(E.beginEndless(ended));
+  const x = E.sanitize(JSON.parse(JSON.stringify(ended))); assert.ok(x.gated && !x.endless); assert.strictEqual(E.beginEndless(x), false);
 });
 t('the mayor\'s refusal brings his second request the same night', () => {
   const s = E.newState({ seed: 2, unlocked: true }); s.night = 14; s.flags.ledgers = true; E.beginNight(s); assert.strictEqual(s.current, 'n14_mayor');
@@ -54,7 +58,7 @@ t('sanitize survives garbage and round-trips a real save', () => {
   assert.strictEqual(E.sanitize(null), null); assert.strictEqual(E.sanitize(5), null);
   const g = E.sanitize({ night: 'x', coin: -4, rep: 900, phase: 'flying', stock: { nope: 3, honey: 'many', mint: 2 }, queue: ['n1_pip', 'bogus', { id: 'gen', clues: 'no' }], current: 'bogus', chosen: ['honey', 'nope'], result: { verdict: 'magic' }, pending: [{ id: 'n1_pip', night: 'soon' }], journal: 'none', ending: 'wat' });
   assert.strictEqual(g.night, 1); assert.strictEqual(g.coin, 0); assert.strictEqual(g.rep, 100); assert.strictEqual(g.phase, 'notice'); assert.deepStrictEqual(g.stock, { honey: 0, mint: 2 }); assert.deepStrictEqual(g.queue, ['n1_pip']); assert.strictEqual(g.current, null); assert.deepStrictEqual(g.chosen, ['honey']); assert.strictEqual(g.result, null); assert.strictEqual(g.ending, null);
-  const s = E.newState({ seed: 5, unlocked: true }); for (let i = 0; i < 7; i++) playNight(s); E.beginNight(s);
+  const s = E.newState({ seed: 5 }); for (let i = 0; i < 4; i++) playNight(s); E.beginNight(s);
   const r = E.sanitize(JSON.parse(JSON.stringify(s))); assert.strictEqual(r.night, s.night); assert.strictEqual(r.rep, s.rep); assert.strictEqual(r.queue.length, s.queue.length); assert.deepStrictEqual(r.flags, s.flags); assert.strictEqual(E.currentCase(r).name, E.currentCase(s).name);
 });
 t('every night has customers that exist, and conditions reference known flags shape', () => { for (const nd of D.NIGHTS) for (const id of nd.customers) assert.ok(E.CASE[id], id); for (const c of D.CASES) for (const k of ['cure', 'harm', 'useless', 'refuse']) assert.ok(c.outcomes[k] && typeof c.outcomes[k].text === 'string', c.id + ' ' + k); });
