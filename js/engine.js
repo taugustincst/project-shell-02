@@ -62,19 +62,20 @@ function generateCase(s, night) {
     const fair = fairPrice(r.best[0]); const desperate = rand(s) < 0.3;
     const name = pick(s, D.NAMES);
     return { id: 'gen_' + night + '_' + Math.floor(rand(s) * 1e6), gen: true, name, night, desperate, pays: desperate ? Math.max(1, fair - 1 - Math.floor(rand(s) * 2)) : fair + 1 + Math.floor(rand(s) * 4),
-      intro: pick(s, ['A face you half know from the market, with a cloth over the mouth.', 'Someone from the far end, mud to the knee, who has come round by the fields.', 'A neighbour, who apologises for the hour and does not leave.', 'A stranger passing through, if anyone passes through a plague town.', 'One of the mill hands, cap in both hands.']),
+      intro: pick(s, D.INTROS),
       clues, outcomes: {
-        cure: { rep: 2, text: `${name} is seen in the market the week after, well. Word gets round.` }, harm: { rep: -6, text: `${name} is worse by morning, and says whose remedy, to anyone who asks and some who do not.` },
-        useless: { rep: -1, text: `${name} says the remedy did nothing. It did nothing kindly, at least.` }, refuse: { rep: -1, text: `${name} goes home untreated and thinks about the shop.` } } };
+        cure: { rep: 2, text: said(s, 'cure', name) }, harm: { rep: -6, text: said(s, 'harm', name) },
+        useless: { rep: -1, text: said(s, 'useless', name) }, refuse: { rep: -1, text: said(s, 'refuse', name) } } };
   }
   return null;
 }
+function said(s, verdict, name) { return pick(s, D.GEN_OUTCOMES[verdict]).split('{name}').join(name); }
 function fairPrice(ids) { return ids.reduce((a, id) => a + (ING[id] ? ING[id].cost : 0), 0) * 2 + 1; }
 
 /* ---------- state ---------- */
 function newState(opts) {
   opts = opts || {};
-  const s = { v: 1, seed: (opts.seed | 0) || ((Date.now() ^ (Math.random() * 1e9)) | 0), night: 1, phase: 'notice', coin: START_COIN, rep: START_REP, flags: {}, stock: {}, queue: [], caseIdx: 0, current: null, chosen: [], result: null, pending: [], news: [], journal: [], seenPages: {}, unlocked: true, gated: false, ending: null, endless: false, stats: { cured: 0, harmed: 0, useless: 0, refused: 0, earned: 0, gouged: 0, nights: 0 } };
+  const s = { v: 1, seed: (opts.seed | 0) || ((Date.now() ^ (Math.random() * 1e9)) | 0), night: 1, phase: 'notice', coin: START_COIN, rep: START_REP, flags: {}, stock: {}, queue: [], caseIdx: 0, current: null, chosen: [], result: null, pending: [], news: [], journal: [], seenPages: {}, unlocked: !!opts.unlocked, gated: false, ending: null, endless: false, stats: { cured: 0, harmed: 0, useless: 0, refused: 0, earned: 0, gouged: 0, nights: 0 } };
   for (const id of unlockedAt(1)) s.stock[id] = 2;
   return s;
 }
@@ -151,8 +152,7 @@ function endNight(s) {
   // a follow-up with after:0 (the mayor's second ask) arrives the same night, before the night closes
   s.news = []; s.lastNews = landed;
   if (s.night >= D.STORY_NIGHTS && !s.ending) { s.ending = endingFor(s); s.phase = 'ended'; return true; }
-  if (s.night === D.FREE_NIGHTS && !s.unlocked) s.gated = true;
-  s.night++; s.phase = 'market';
+  s.night++; s.phase = 'market'; checkGate(s);
   for (const i of D.INGREDIENTS) if (i.unlock === s.night) s.stock[i.id] = Math.max(1, s.stock[i.id] | 0);
   return true;
 }
@@ -161,6 +161,13 @@ function beginEndless(s) { if (!s.ending || !s.unlocked) return false; s.endless
 function openNotice(s) { if (s.phase !== 'market') return false; s.phase = 'notice'; return true; }
 function buy(s, id, n) { n = n | 0 || 1; const i = ING[id]; if (!i || i.unlock > s.night || s.phase !== 'market' && s.phase !== 'notice') return false; const cost = i.cost * n; if (s.coin < cost) return false; s.coin -= cost; s.stock[id] = (s.stock[id] | 0) + n; return true; }
 function grantUnlock(s) { s.unlocked = true; s.gated = false; }
+/* Past the free nights without the unlock, the shop waits at the noticeboard. Only Play's answer opens it (game.js). */
+function checkGate(s) {
+  s.gated = !s.unlocked && s.night > D.FREE_NIGHTS;
+  if (s.gated && s.phase !== 'market' && s.phase !== 'notice' && s.phase !== 'ended') { s.phase = 'notice'; s.queue = []; s.caseIdx = 0; s.current = null; s.chosen = []; s.result = null; }
+  if (s.gated) s.endless = false;
+  return s.gated;
+}
 
 /* Where the mayor's same-night follow-up must appear before the night closes. */
 function immediateFollow(s) { const c = currentCase(s); if (!c || !s.result) return; const o = c.outcomes[s.result.verdict]; if (o && o.follow && o.follow.after === 0 && CASE[o.follow.id]) { s.queue.splice(s.caseIdx + 1, 0, o.follow.id); const n = s.news[s.news.length - 1]; if (n) n.follow = null; } }
@@ -178,7 +185,7 @@ function sanitizeCase(c) {
 }
 function sanitize(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const s = newState({ seed: raw.seed }); // every state is fully unlocked, whatever an old save says
+  const s = newState({ seed: raw.seed }); // the unlock is Play's to say (game.js), never a save's
   s.night = Math.round(num(raw.night, 1, 1, 9999)); s.coin = Math.round(num(raw.coin, 0, 0, 1e9)); s.rep = num(raw.rep, START_REP, 0, 100);
   s.phase = ['notice', 'counter', 'price', 'outcome', 'nightend', 'market', 'ended'].includes(raw.phase) ? raw.phase : 'notice';
   s.flags = {}; if (raw.flags && typeof raw.flags === 'object') for (const k in raw.flags) if (raw.flags[k]) s.flags[String(k).slice(0, 40)] = true;
@@ -193,14 +200,15 @@ function sanitize(raw) {
   s.news = san(raw.news); s.lastNews = san(raw.lastNews);
   s.journal = Array.isArray(raw.journal) ? raw.journal.filter(j => j && typeof j === 'object').slice(-JOURNAL_CAP).map(j => ({ night: Math.round(num(j.night, 1)), name: String(j.name || '').slice(0, 60), verdict: String(j.verdict || '').slice(0, 8), remedy: Array.isArray(j.remedy) ? j.remedy.filter(id => ING[id]) : [], paid: Math.round(num(j.paid, 0, 0, 999)), gen: !!j.gen })) : [];
   s.seenPages = {}; if (raw.seenPages && typeof raw.seenPages === 'object') for (const k in raw.seenPages) if (ING[k]) s.seenPages[k] = 1;
-  s.gated = false; s.ending = D.ENDINGS.some(e => e.id === raw.ending) ? raw.ending : null; s.endless = raw.endless === true;
+  s.ending = D.ENDINGS.some(e => e.id === raw.ending) ? raw.ending : null; s.endless = raw.endless === true;
   if (raw.stats && typeof raw.stats === 'object') for (const k in s.stats) s.stats[k] = Math.round(num(raw.stats[k], 0, 0, 1e9));
   // a state that claims to be mid-night without a customer falls back to the notice
   if ((s.phase === 'counter' || s.phase === 'price' || s.phase === 'outcome') && !s.current) s.phase = 'notice';
   if (s.phase === 'price' && !s.result) s.phase = 'counter';
+  checkGate(s);
   return s;
 }
 
-const ENGINE = { D, ING, CASE, NIGHT, PRICES, MAX_COMPOUND, rand, unlockedAt, truthOf, evaluate, solve, caseNight, generateCase, fairPrice, newState, unlockedIds, condOk, currentCase, nightDef, beginNight, toggleIngredient, giveRemedy, setPrice, immediateFollow, nextCustomer, endNight, endingFor, beginEndless, openNotice, buy, grantUnlock, sanitize };
+const ENGINE = { D, ING, CASE, NIGHT, PRICES, MAX_COMPOUND, rand, unlockedAt, truthOf, evaluate, solve, caseNight, generateCase, fairPrice, newState, unlockedIds, condOk, currentCase, nightDef, beginNight, toggleIngredient, giveRemedy, setPrice, immediateFollow, nextCustomer, endNight, endingFor, beginEndless, openNotice, buy, grantUnlock, checkGate, sanitize };
 if (typeof module !== 'undefined' && module.exports) module.exports = ENGINE; else root.APO = ENGINE;
 })(typeof window !== 'undefined' ? window : globalThis);
