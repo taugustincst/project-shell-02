@@ -57,6 +57,8 @@ const closeNightFive = async q => { await T(q, () => { const K = window.__apothe
   check('once the news is in, the journal shows what the remedy did', (await p.locator('#journal li.cure, #journal li.harm, #journal li.useless').count()) >= 1 && !(await p.textContent('#journal')).includes('word tomorrow'));
   await p.click('.tab[data-tab="more"]'); await p.waitForTimeout(50);
   check('outside the Play app the unlock card says so and its buttons are off', !(await p.locator('#unlock-card').isHidden()) && (await p.textContent('#unlock-note')).includes('Google Play') && (await p.locator('#btn-unlock[disabled]').count()) === 1);
+  { const rows = await p.$$eval('#more-list a', as => as.map(a => ({ href: a.href, t: a.textContent, img: a.querySelector('img').naturalWidth }))); check('the More tab lists the other live games with icon and Play link', await p.isVisible('#more-card') && rows.length >= 2 && rows.every(r => r.href.startsWith('https://play.google.com/store/apps/details?id=com.taugustincst.') && !r.href.endsWith('.apothecary') && r.img > 0 && !/[$£€]/.test(r.t)), JSON.stringify(rows.map(r => r.href.split('.').pop()))); }
+  check('no other games are shown in the shop', (await p.locator('#tab-shop .more-row').count()) === 0);
   await p.click('.tab[data-tab="shop"]');
   // the gate after night five
   await closeNightFive(p); await p.waitForSelector('#modal-gate:not([hidden])');
