@@ -4,15 +4,16 @@
    never inside play, which is what keeps the "Contains ads" answer at No.
 
    A title shows only while `live` is true. Turn it on once its listing is
-   public, or the link opens Play's "not found" page. Titles with no hook or
-   icon here stay hidden too. The 16+ Night Shift is left out on purpose,
-   because these games are rated for younger players. Same file in every game. */
+   public, or the link opens Play's "not found" page. Elderon is live but
+   stays off until its icon is in icons/more/. The 16+ Night Shift is left
+   out on purpose, because these games are rated for younger players.
+   Same file in every game. */
 (function (root) {
   'use strict';
   var PLAY = 'https://play.google.com/store/apps/details?id=com.taugustincst.';
   var CATALOG = [
-    { id: 'elderon', title: 'Elderon', hook: '', tags: ['strategy', 'rpg'], live: false },
-    { id: 'ironhold', title: 'Ironhold', hook: '', tags: ['strategy'], live: false },
+    { id: 'elderon', title: 'Elderon', hook: 'Tactical RPG: tempo turns, jobs, height and facing. Offline, no ads.', tags: ['strategy', 'rpg'], live: false },
+    { id: 'ironhold', title: 'Ironhold Tower Defense', hook: 'Offline tower defense: 120 waves, 3 maps, 5 towers, bosses. No ads, no IAP.', tags: ['strategy'], live: true },
     { id: 'lostproperty', title: 'Lost Property Office', hook: 'Every lost thing has a story. Check claims against the log and stamp.', tags: ['deduction', 'story', 'cozy'], live: true },
     { id: 'apothecary', title: 'The Night Apothecary', hook: 'Diagnose by description. A deduction shop game: 30 nights, 40 herbs, 3 endings.', tags: ['deduction', 'shop', 'story', 'cozy'], live: true },
     { id: 'mended', title: 'Mended: Repair Shop', hook: "Run your own repair shop. Diagnose, quote, order parts and win a street's trust.", tags: ['deduction', 'shop', 'cozy'], live: true },
