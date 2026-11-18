@@ -5,7 +5,7 @@ const E = window.APO, D = E.D;
 // The unlock is a Google Play purchase (js/billing.js). Play's answer, cached on the phone, is the only thing
 // that opens nights six to thirty: not a save, not a save code, not a URL.
 const BILL = window.createBilling({ storageKey: 'apothecary.unlock', productId: 'full_unlock' });
-const VERSION = '1.1.1', SAVE_KEY = 'apothecary.v1', BACKUP_KEY = 'apothecary.v1.backup';
+const VERSION = '1.1.2', SAVE_KEY = 'apothecary.v1', BACKUP_KEY = 'apothecary.v1.backup';
 const $ = id => document.getElementById(id);
 let S = null, meta = null, settings = null;
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
