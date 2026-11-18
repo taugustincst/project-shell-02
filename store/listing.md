@@ -6,27 +6,33 @@ Rules from the roster: short description is features only, never price or promo 
 The Night Apothecary
 
 ## Short description (80)
-Diagnose by description. A deduction shop game: 30 nights, 40 herbs, 3 endings.
+Herbal mystery deduction game: hear the symptoms, read the pages, mix the cure.
 
 ## Full description
-**Diagnose by description.** You inherit a midnight apothecary in a plague-quiet town. Customers describe their symptoms, their dreams and their omens in plain words. Some of what they say matters. Some of it is the magpie on the gate.
+**A mystery deduction game about a midnight apothecary in a plague-quiet town: hear the symptoms, read the herbal, mix the cure.**
 
-**Read the pages.** Forty ingredients, each with its appearance, habitat, properties and preparation. Thirty-three of them have a lookalike they are mistaken for, and the tell that gives it away. The encyclopedia grows as the story does: the locked cupboard, the physician's shelf, the midwife's pages, the pages your aunt sewed shut.
+**Diagnose by description.** You inherit your aunt's shop and its night trade. Customers describe their symptoms, their dreams and their omens in plain words. Some of what they say matters. Some of it is the magpie on the gate. A baby's barking cough wants a cough remedy, but not the honey: the pages say never for infants.
 
-**Compound, or refuse.** Mix one to three ingredients in the mortar, set a price, and serve. Or refuse: sometimes that is the right answer. A wrong remedy can be worse than none, and the town will tell you tomorrow night.
+**Read the pages.** Forty ingredients, each with its appearance, habitat, properties and preparation, and what it must never be given to. Thirty-three of them have a lookalike they are mistaken for, and the tell that gives it away. Search the pages by word, or filter by what a plant eases and who it is safe for. The encyclopedia grows as the story does: the locked cupboard, the physician's shelf, the midwife's pages, the pages your aunt sewed shut.
 
-**Live with it.** Thirty authored nights, one branching story, three endings decided by what you did and who trusted you for it. Then the long winter: endless procedural customers, every one of them solvable from the pages alone.
+**Compound, or refuse.** Put one to three ingredients in the mortar, set a price, and serve. Or refuse: sometimes that is the right answer. Stock the jars at the morning market. What the remedy did, the town tells you the next night.
 
-- Every diagnosis is provable from the encyclopedia with the pages you have at the time. Fairness is checked by a validator before anything ships.
-- No ads, no timers, no accounts, no consumables. Fully offline.
-- Portrait, one-handed, large-text and high-contrast options, no twitch input.
-- The first five nights are free. One purchase opens nights six to thirty, the three endings and the long winter. Nothing else to buy.
+**Live with it.** Thirty authored nights, one branching story, three endings decided by your repute and what you did. Then the long winter: endless new customers, every one of them solvable from the pages alone.
+
+**The first five nights are free.** One purchase unlocks nights six to thirty, the three endings and the long winter. Nothing else to buy.
+
+- A fair puzzle game: every case can be worked out from the pages you have that night, checked by a validator before release
+- Offline game: no ads, no timers, no account
+- Portrait play with large-text, high-contrast and reduce-motion options; save codes to move a game between devices
 
 ## Screenshot captions
-1. Diagnose by description · the encyclopedia open at the counter
-2. 40 ingredients · appearance, habitat, properties, 33 lookalikes
-3. Compound, price, or refuse
-4. 30 nights · one branching story · three endings
+1. Diagnose by description · Every customer tells you what is wrong, in words
+2. Search the pages · What it eases, and who it must never touch
+3. Know the lookalikes · 33 of the 40 ingredients have a twin
+4. Compound, or refuse · Up to three ingredients in the mortar
+5. Live with the outcome · 30 nights, one story, three endings
+
+Captioned phone screenshots, in this order: `store/play/play-01.png` to `play-05.png` (1080 × 1920).
 
 ## Category
 Game · Puzzle. Tags: deduction, mystery, apothecary, story, offline.
